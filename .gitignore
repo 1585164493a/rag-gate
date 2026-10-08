@@ -1,0 +1,29 @@
+# 报告与基线
+.rag-gate/
+!examples/.rag-gate/baseline.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# 虚拟环境 / 工具
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本地开发脚本（不进发布内容）
+_dev/

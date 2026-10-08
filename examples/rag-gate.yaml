@@ -1,0 +1,33 @@
+# rag-gate 示例配置 —— 零依赖，30 秒能跑通
+#   rag-gate compare --config examples/rag-gate.yaml
+#
+# 把 dataset / retriever 换成你自己的，就是接入完成。
+
+dataset: golden.example.jsonl            # 每行 {id, question, expected_doc_ids, [expected_answer]}
+
+retriever:
+  type: python                           # python | http | command
+  target: ./adapters/dummy_retriever.py:retrieve   # 也可写 模块路径:函数名，例如 my_app.search.retrieve
+  top_k: 5
+
+metrics:
+  - recall@5
+  - hit_rate@5
+  - mrr
+  - ndcg@5
+
+gate:
+  baseline: .rag-gate/baseline.json
+  max_drop:                              # 相对基线允许的最大跌幅（主判据）
+    recall@5: 0.05
+    hit_rate@5: 0.05
+    mrr: 0.05
+    ndcg@5: 0.05
+  min_absolute:                          # 可选兜底：防止基线本身就很差
+    recall@5: 0.60
+  drift:
+    mean_drop: 0.02                      # top1 相似度均值允许的下移幅度
+
+report:
+  formats: [table, markdown, json]
+  output_dir: .rag-gate

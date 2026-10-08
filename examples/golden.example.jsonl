@@ -1,0 +1,16 @@
+{"id": "q1",  "question": "向量数据库里为什么会出现重复数据？", "expected_doc_ids": ["kb-001"], "expected_answer": "写入任务重试时没有做幂等，同一条数据被写了两遍。"}
+{"id": "q2",  "question": "写入重试之后索引里出现重复文档，怎么排查？", "expected_doc_ids": ["kb-002"], "expected_answer": "用文档内容哈希去查重复，先定位再清理。"}
+{"id": "q3",  "question": "换了 Embedding 模型以后检索结果完全不对，是什么原因？", "expected_doc_ids": ["kb-003"], "expected_answer": "查询侧还是旧模型，向量空间对不上。"}
+{"id": "q4",  "question": "线上能用不同版本的 Embedding 同时跑吗？", "expected_doc_ids": ["kb-004"], "expected_answer": "要双写双读加灰度，单边升级必然出问题。"}
+{"id": "q5",  "question": "长文档应该怎么切分才不会丢语义？", "expected_doc_ids": ["kb-005"], "expected_answer": "按语义边界切，块间保留重叠。"}
+{"id": "q6",  "question": "chunk 大小是不是越小越好？", "expected_doc_ids": ["kb-006", "kb-005"], "expected_answer": "太小丢上下文，几百 token 配重叠比较稳。"}
+{"id": "q7",  "question": "BM25 和向量检索怎么融合排序？", "expected_doc_ids": ["kb-007"], "expected_answer": "用 RRF 这类排名融合，不必强行统一分数尺度。"}
+{"id": "q8",  "question": "RAG 的回答不准，多久需要评测一次？", "expected_doc_ids": ["kb-008"], "expected_answer": "至少每次改动都跑，最好进 CI。"}
+{"id": "q9",  "question": "rerank 阶段要不要保留原始分数？", "expected_doc_ids": ["kb-009"], "expected_answer": "要保留，调参和排查都靠它。"}
+{"id": "q10", "question": "重排模型只能用相似度做排序特征吗？", "expected_doc_ids": ["kb-010"], "expected_answer": "可以把时间、热度、业务权重一起作为特征。"}
+{"id": "q11", "question": "检索效果怎么回归测试？", "expected_doc_ids": ["kb-011"], "expected_answer": "建固定评测集，和基线比，退化了就报错。"}
+{"id": "q12", "question": "召回数量 k 设多少比较合适？", "expected_doc_ids": ["kb-012"], "expected_answer": "先大一点给重排，上下文预算再决定最终条数。"}
+{"id": "q13", "question": "检索服务延迟升高了怎么定位？", "expected_doc_ids": ["kb-013"], "expected_answer": "先看分位延迟，再查索引和缓存。"}
+{"id": "q14", "question": "缓存失效会不会把检索打挂？", "expected_doc_ids": ["kb-014", "kb-013"], "expected_answer": "会，集中失效会造成查询量突增。"}
+{"id": "q15", "question": "检索失败要不要重试？", "expected_doc_ids": ["kb-015"], "expected_answer": "要，但必须带退避和上限，且写入侧要幂等。"}
+{"id": "q16", "question": "失败重试之后为什么数据变多了？", "expected_doc_ids": ["kb-001", "kb-015"], "expected_answer": "重试没做幂等，同一条被写入多次。"}

@@ -1,0 +1,58 @@
+# 三种 adapter 的写法对照 —— 复制其中一段到你的 rag-gate.yaml 即可。
+# 全部字段都有注释，照抄就行。
+
+# ---------------------------------------------------------------------------
+# 1) 自己的 Python 代码（最常用）
+# ---------------------------------------------------------------------------
+retriever:
+  type: python
+  # 模块路径:函数名，或者 脚本路径:函数名（相对配置文件所在目录）
+  target: my_app.search.retrieve
+  top_k: 10
+  timeout: 30
+  # 函数签名（最宽松的写法，两种都支持）：
+  #     def retrieve(query: str, k: int) -> list[str]
+  #     def retrieve(query: str) -> list[str]
+  # 返回值可以是：
+  #     ["doc_1", "doc_2"]
+  #     [{"doc_id": "doc_1", "score": 0.91}, ...]      # 带 score 才能用 drift
+  #     {"ids": [...], "scores": [...]}
+  #     [("doc_1", 0.91), ...]
+
+# ---------------------------------------------------------------------------
+# 2) HTTP 检索接口
+# ---------------------------------------------------------------------------
+# retriever:
+#   type: http
+#   url: http://localhost:8000/search
+#   method: POST                       # 默认：有 request 就是 POST，否则 GET
+#   request:                           # {{question}} / {{k}} 会被替换
+#     q: "{{question}}"
+#     k: "{{k}}"
+#   response:                          # 极简 JSONPath：$.a.b / $.a[*].b / $[0]
+#     hits: "$.data[*].doc_id"         # 只要 doc_id
+#     scores: "$.data[*].score"        # 可选，给了就能算 drift
+#   headers:
+#     Authorization: "Bearer xxx"
+#   timeout: 30
+#
+# 响应形如：
+#   {"data": [{"doc_id": "kb-001", "score": 0.93}, {"doc_id": "kb-007", "score": 0.81}]}
+#
+# 如果这一层返回的是整个对象，也可以直接写：
+#   response: {hits: "$.data[*]"}
+
+# ---------------------------------------------------------------------------
+# 3) 命令行 / 别的语言的检索器
+# ---------------------------------------------------------------------------
+# retriever:
+#   type: command
+#   command: "python search.py --q {{question}} --k {{k}}"
+#   parse: jsonl                       # jsonl | json | json-ids | lines
+#   timeout: 60
+#
+# 支持的输出：
+#   jsonl  每行 {"doc_id": "kb-001", "score": 0.9} 或每行 "kb-001"
+#   json   一个 JSON 数组
+#   json-ids  同上，但只认 id 字符串
+#   lines  每行一个 doc_id

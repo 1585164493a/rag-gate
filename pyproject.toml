@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-gate"
+version = "0.1.0"
+description = "把 RAG 检索质量变成 CI 门禁：和基线比，退化了就不许合并"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "rag-gate contributors" }]
+keywords = ["rag", "retrieval", "evaluation", "eval", "ci", "regression-testing", "llm"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+]
+# 核心零依赖：只要求一个「问题 → 文档 id 列表」的函数。
+# 装了 PyYAML 就用它解析配置，没装就用内置的极简解析器。
+dependencies = []
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6.0"]
+dev = ["pytest>=7.0", "PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/your-org/rag-gate"
+Repository = "https://github.com/your-org/rag-gate"
+Issues = "https://github.com/your-org/rag-gate/issues"
+
+[project.scripts]
+rag-gate = "rag_gate.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

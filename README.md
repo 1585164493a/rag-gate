@@ -42,7 +42,7 @@ Scoring already exists. **Gating against a historical baseline does not.**
 
 ```bash
 git clone https://github.com/your-org/rag-gate && cd rag-gate
-pip install -e .            # or skip: PYTHONPATH=src
+pip install -e .            # or skip the install entirely: PYTHONPATH=src
 cd examples
 
 rag-gate baseline --config rag-gate.yaml    # 1) record the baseline

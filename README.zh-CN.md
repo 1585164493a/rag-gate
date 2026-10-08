@@ -42,7 +42,7 @@ rag-gate compare --config rag-gate.yaml     # 退化 → exit 1 → PR 变红
 
 ```bash
 git clone https://github.com/your-org/rag-gate && cd rag-gate
-pip install -e .            # 或者不装，直接用 PYTHONPATH=src
+pip install -e .            # 或者干脆不装，直接用 PYTHONPATH=src
 cd examples
 
 rag-gate baseline --config rag-gate.yaml    # 1) 把当前状态存成基线

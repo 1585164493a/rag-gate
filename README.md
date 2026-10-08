@@ -1,70 +1,71 @@
-# rag-gate · 把 RAG 检索质量变成 CI 门禁
+# rag-gate · turn RAG retrieval quality into a CI gate
 
-> **像跑单测一样跑 RAG 评测：改了切分、换了 Embedding、调了权重，退化了就不许合并。**
+> **Run RAG evaluation like unit tests: change your chunking, swap the embedding model, retune weights — if retrieval regresses, the PR goes red.**
 
 ```bash
 pip install rag-gate
-rag-gate compare --config rag-gate.yaml     # 退化 → exit 1 → PR 变红
+rag-gate compare --config rag-gate.yaml     # regression -> exit 1 -> red PR
 ```
 
 ![demo](docs/demo.gif)
 
+[中文说明](README.zh-CN.md)
+
 ---
 
-## 它不是编的：我们上周真的踩了这个坑
+## This is not a made-up story
 
-> 我们换了个 Embedding 模型。**维度一样、代码没报错、延迟还降了。**
-> 三天后客户在群里投诉「回答完全不对」。
+> We swapped our embedding model last week. **Same dimensions, no errors, latency even improved.**
+> Three days later a customer complained in the group chat: "the answers are completely wrong."
 >
-> 查下来：**写入侧换了模型，读取侧不知道** —— 向量空间对不上，检索结果全乱。
-> 更糟的是三件事：
+> Root cause: **the write path used the new model, the read path did not** — the vector spaces
+> no longer matched, so retrieval returned garbage. And three things made it worse:
 >
-> - **没有任何门禁拦住它**（换模型不用过任何检查）
-> - **没有任何监控看见它**（延迟、错误率全绿）
-> - **是客户先发现的**
+> - **No gate stopped it** (changing a model required no check at all)
+> - **No monitoring saw it** (latency and error rate were green)
+> - **A customer found it first**
 >
-> 这个项目就是那次事故的产物。
+> This project is what came out of that incident.
 
-## 为什么现有工具没覆盖
+## What existing tools miss
 
-| 工具 | 做什么 | 缺什么 |
+| Tool | What it does | What it misses |
 | --- | --- | --- |
-| Ragas / DeepEval | 给一次结果**打分**，输出一个数字 | 不跟历史基线比，**不卡 CI** |
-| promptfoo | 提示词层面的 A/B | 不针对**检索**质量 |
-| 自己写脚本 | 一次性对比 | 不复用、不沉淀基线 |
-| **rag-gate** | **和历史基线比，跌太多就 fail** | —— |
+| Ragas / DeepEval | **Scores** one run, prints a number | No comparison against history, **no CI gate** |
+| promptfoo | A/B testing at the prompt level | Not about **retrieval** quality |
+| Your own script | One-off comparison | Not reusable, no stored baseline |
+| **rag-gate** | **Compares against a baseline, fails on regression** | — |
 
-**空位就在这里**：打分已经有人做，**「和历史基线的门禁」没人做**。
+Scoring already exists. **Gating against a historical baseline does not.**
 
-## 30 秒跑通（零依赖，不用起数据库）
+## 30-second quickstart (zero dependencies, no vector DB)
 
 ```bash
 git clone https://github.com/your-org/rag-gate && cd rag-gate
-pip install -e .            # 或者不装，直接用 PYTHONPATH=src
+pip install -e .            # or skip: PYTHONPATH=src
 cd examples
 
-rag-gate baseline --config rag-gate.yaml    # 1) 把当前状态存成基线
-rag-gate compare  --config rag-gate.yaml    # 2) 应该通过（exit 0）
+rag-gate baseline --config rag-gate.yaml    # 1) record the baseline
+rag-gate compare  --config rag-gate.yaml    # 2) should pass (exit 0)
 
-# 3) 模拟「换了 Embedding 没同步」
-#    macOS / Linux:  export RAG_GATE_DEMO=broken-model
-#    Windows:        $env:RAG_GATE_DEMO = "broken-model"
-rag-gate compare --config rag-gate.yaml     # -> exit 1，并打印谁跌了多少
+# 3) simulate "swapped the embedding model, forgot the read path"
+export RAG_GATE_DEMO=broken-model           # Windows: $env:RAG_GATE_DEMO = "broken-model"
+rag-gate compare --config rag-gate.yaml     # -> exit 1, with a diff table
 ```
 
-`examples/adapters/dummy_retriever.py` 是个**假检索器**，不联任何库、结果确定，
-就为了让上面三条命令 30 秒内看到「绿 → 红」的全过程。它内置四种事故模式：
+`examples/adapters/dummy_retriever.py` is a **fake retriever**: no DB, no deps, deterministic
+results, just so you can watch green turn red in 30 seconds. It ships with four incident modes:
 
-| `RAG_GATE_DEMO` | 模拟的事故 | 会看到什么 |
+| `RAG_GATE_DEMO` | Incident | What you see |
 | --- | --- | --- |
-| `healthy`（默认） | 一切正常 | 全绿 |
-| `broken-model` | 换 Embedding 没同步 | 指标跌 + **相似度分布下移** |
-| `dup-write` | 写入重试没幂等 | mrr/ndcg 跌（重复副本挤掉答案） |
-| `shrink` | 检索只返回 2 条 | recall 跌、但**分布稳定** |
+| `healthy` (default) | all good | all green |
+| `broken-model` | embedding swapped on one side | metrics drop + **similarity distribution shifts down** |
+| `dup-write` | non-idempotent retry | mrr/ndcg drop (duplicates push answers out) |
+| `shrink` | retriever returns only 2 hits | recall drops, **distribution stays stable** |
 
-最后两行的区别很重要：**同样是指标跌，原因完全不同**。
+The last two matter: **the same metric drop can have completely different causes.**
 
-退化时终端长这样（颜色省略）：
+A failing run looks like this (colors omitted):
 
 ```
 指标          基线      本次      变化       允许跌幅    判定
@@ -79,124 +80,126 @@ ndcg@5        0.9396    0.2194    -0.7201    0.05        FAIL
 门禁结果：检索质量退化（exit 1）
 ```
 
-> 管道的输出永远不带颜色（`NO_COLOR` 也认），所以 `--format json | jq` 是安全的：
-> 报告走 stdout，提示和结论走 stderr。
+> Piped output is never colored (`NO_COLOR` is honored), so `--format json | jq` is safe:
+> the report goes to stdout, hints and the verdict go to stderr.
 
-## 怎么接到我自己的项目
+## Wiring it into your own project
 
-只要给它一个「问题 → 文档 id 列表」的函数，**不 import 任何向量库、不做集成**。
+Give it one function — `question -> doc ids`. **No vector-store imports, no framework integration.**
 
 ```yaml
 # rag-gate.yaml
-dataset: golden.jsonl          # 每行 {id, question, expected_doc_ids, [expected_answer]}
+dataset: golden.jsonl          # each line: {id, question, expected_doc_ids, [expected_answer]}
 
 retriever:
   type: python                 # python | http | command
-  target: my_app.retrieve      # 或 ./scripts/retrieve.py:retrieve
+  target: my_app.retrieve      # or ./scripts/retrieve.py:retrieve
   top_k: 10
 
 metrics: [recall@5, hit_rate@5, mrr, ndcg@10]
 
 gate:
   baseline: baseline.json
-  max_drop:                    # ★ 主判据：相对基线允许的最大跌幅
+  max_drop:                    # ★ primary rule: max allowed drop vs baseline
     recall@5: 0.02
     mrr: 0.03
-  min_absolute:                # 可选兜底，防基线本身就很差
+  min_absolute:                # optional floor, protects against a bad baseline
     recall@5: 0.60
   drift:
-    mean_drop: 0.02            # top1 相似度均值允许的下移幅度
+    mean_drop: 0.02            # max allowed drop of top1 similarity mean
 
 report:
   formats: [table, markdown, json]
   output_dir: .rag-gate
 ```
 
-你的函数长这样就行，返回什么形状都认：
+Your function can return any of these:
 
 ```python
 def retrieve(query: str, k: int) -> list:
-    return ["doc_1", "doc_7"]                          # 只要 id
-    # 或者带上分数，drift 就能用：
+    return ["doc_1", "doc_7"]                          # ids only
+    # or with scores, which enables drift:
     # return [{"doc_id": "doc_1", "score": 0.91}, ...]
 ```
 
-HTTP 检索服务和命令行检索器也支持，写法都写在
-[`examples/adapters.example.yaml`](examples/adapters.example.yaml) 里。
+HTTP retrievers and CLI retrievers are supported too — see
+[`examples/adapters.example.yaml`](examples/adapters.example.yaml).
 
-## ★ 为什么比的是「相对退化」，不是「绝对分数」
+## ★ Why it compares *relative* regression, not an absolute score
 
-绝对阈值极难定：不同数据集、不同业务要求差异巨大，**定错了这个工具就没人用**。
+Absolute thresholds are nearly impossible to pick: they differ per dataset and per business.
+**Pick the wrong one and nobody adopts your tool.**
 
-所以主判据是 **`max_drop`（相对基线允许的最大跌幅）**，`min_absolute` 只是可选兜底。
-这条设计决策决定了它能不能被别人的项目接进去。
+So the primary rule is **`max_drop` (max allowed drop vs baseline)**; `min_absolute` is only an
+optional floor. This single decision is what makes rag-gate adoptable in someone else's project.
 
-## 四个命令 + 三种退码
+## Four commands, three exit codes
 
-| 命令 | 作用 |
+| Command | What it does |
 | --- | --- |
-| `rag-gate run` | 跑一次，出报告（不判定） |
-| `rag-gate baseline` | 把当前结果存成基线（**人工确认后提交进仓库**） |
-| `rag-gate compare` | 和基线比并执行门禁（CI 用） |
-| `rag-gate drift` | 只看相似度分布漂移 |
+| `rag-gate run` | Run once, print a report (no gating) |
+| `rag-gate baseline` | Store current results as the baseline (**review, then commit it**) |
+| `rag-gate compare` | Compare against baseline and gate (use this in CI) |
+| `rag-gate drift` | Only look at similarity-distribution drift |
 
-| 退码 | 含义 | 看到它该做什么 |
+| Exit code | Meaning | What to do |
 | --- | --- | --- |
-| `0` | 通过 | 合并 |
-| `1` | 检索质量退化 | 看 diff 表，确认是有意改动就去刷新基线 |
-| `2` | 配置或取数错误 | 这是**没跑起来**，不是检索坏了 |
+| `0` | pass | merge |
+| `1` | retrieval quality regressed | read the diff table; if intended, refresh the baseline |
+| `2` | config or retrieval error | it never ran — this is **not** a quality regression |
 
-**三种退码必须分开** —— 否则用户分不清「是我检索坏了」还是「我配置写错了」。
+**They must stay separate**, otherwise users cannot tell "my retrieval broke" from "my config is wrong".
 
-## 指标定义（避免歧义）
+## Metric definitions
 
-| 指标 | 定义 |
+| Metric | Definition |
 | --- | --- |
-| `recall@k` | 期望文档中，出现在前 k 的比例（**多文档**场景主指标） |
-| `hit_rate@k` | 前 k 里**至少命中一个**的比例（**单文档**场景更直观） |
-| `mrr` | 第一个命中位置的倒数均值 |
-| `ndcg@k` | 带位置折扣的排序质量（二值相关性） |
-| `similarity_drift` | top1 相似度的**分布变化**（均值/中位数/分位数），专抓「向量空间变了」 |
+| `recall@k` | share of expected docs present in the top k (**multi-doc** main metric) |
+| `hit_rate@k` | share of queries with **at least one** hit in the top k (**single-doc** friendly) |
+| `mrr` | mean reciprocal rank of the first hit |
+| `ndcg@k` | position-discounted ranking quality (binary relevance) |
+| `similarity_drift` | change of the **top1 similarity distribution** (mean/median/quantiles) |
 
-**为什么要有 `drift`**：前四个指标是「结果对不对」，drift 是「过程变没变」。
-Embedding 那次事故里，**结果指标可能还没崩到阈值以下，相似度分布已经整体下移了** ——
-那是最早的信号。
+**Why drift exists**: the first four metrics answer "are the results right"; drift answers
+"did the process change". In that embedding incident, **result metrics may not have crossed the
+threshold yet while the similarity distribution had already shifted down** — the earliest signal.
 
-> 约定：多返回不相关文档不会扣分，也不会加分；重复 id 只算一次；
-> `mrr` 只看前 k 名里的第一个命中。
+> Conventions: extra irrelevant docs neither help nor hurt; duplicate ids count once;
+> `mrr` only looks at the first hit within the top k.
 
-## CI 集成（贴 PR 评论那种）
+## CI integration (with a PR comment)
 
-[`.github/workflows/gate.yml`](.github/workflows/gate.yml) 就是可以直接抄的模板：
+[`.github/workflows/gate.yml`](.github/workflows/gate.yml) is a copy-paste template:
 
 ```yaml
 - run: pip install rag-gate
 - run: rag-gate compare --config rag-gate.yaml --format markdown > comment.md
-# 退化时 exit 1 -> PR 直接红；报告贴成 PR 评论（模板里有现成的 actions/github-script）
+# exit 1 on regression -> red PR; the template posts the report as a PR comment
 ```
 
-记得把 `baseline.json` 一起提交进仓库 —— 它是历史对比的唯一依据。
-如果 golden set 自己变了，报告里会**警告**「新旧分数不可直接比较」（想更严格可以开
-`gate.fail_on_dataset_change`）。
+Commit `baseline.json` — it is the only source of history. If the golden set itself changes,
+the report **warns** that scores are not comparable (make it fatal with
+`gate.fail_on_dataset_change: true`).
 
 ## Roadmap
 
-- [x] v0.1.0 指标 + 三种 adapter + 基线对比 + 三种退码 + drift + markdown 报告
-- [ ] 从 Ragas 结果里取答案分（可选，不绑依赖）
-- [ ] `rag-gate diff --baseline a.json --current b.json`（不给检索器，纯比两份报告）
-- [ ] GitHub Action 官方封装（`uses: rag-gate/action@v1`）
-- [ ] 按 query 维度的退化排名（最先坏的是哪几条问题）
-- [ ] 与在线监控的衔接（把线上抽样结果喂回门禁）
+- [x] v0.1.0 metrics + three adapters + baseline comparison + three exit codes + drift + markdown
+- [ ] Optional Ragas answer-score ingestion (no hard dependency)
+- [ ] `rag-gate diff --baseline a.json --current b.json` (compare two reports, no retriever)
+- [ ] Official GitHub Action (`uses: rag-gate/action@v1`)
+- [ ] Per-query regression ranking (which questions broke first)
+- [ ] Bridge to online monitoring (feed sampled production queries into the gate)
 
-## 贡献 / 开发
+## Contributing
 
 ```bash
 pip install -e ".[dev]"
-pytest -q                     # 测试不需要任何外部服务（HTTP adapter 自己起本地服务器）
-python examples/_demo_walkthrough.py   # 端到端看四种事故 + 三种退码
+pytest -q                              # no external services needed (the HTTP adapter starts a local server)
+python examples/_demo_walkthrough.py   # end-to-end: four incidents + three exit codes
 ```
 
-Issue / PR 都欢迎。特别想要的反馈：**你接自己的检索器时，哪一步最卡**。
+Issues and PRs welcome. Especially useful feedback: **where did you get stuck wiring up your own
+retriever?**
 
 ## License
 

@@ -34,9 +34,13 @@ rag-gate compare --config rag-gate.yaml     # 退化 → exit 1 → PR 变红
 | Ragas / DeepEval | 给一次结果**打分**，输出一个数字 | 不跟历史基线比，**不卡 CI** |
 | promptfoo | 提示词层面的 A/B | 不针对**检索**质量 |
 | 自己写脚本 | 一次性对比 | 不复用、不沉淀基线 |
-| **rag-gate** | **和历史基线比，跌太多就 fail** | —— |
+| [Rag-regression-gate](https://github.com/sivananda1995/Rag-regression-gate)、[rag-eval-gate](https://github.com/jinwovo/rag-eval-gate) | 带统计的 CI 门禁（bootstrap / 置信区间） | 接入更重；我们用**零依赖 + 30 秒跑通**换掉那套统计 |
+| **rag-gate** | 和基线比、执行门禁，**外加分布漂移信号** | 暂时没有显著性检验（在 Roadmap 里） |
 
-**空位就在这里**：打分已经有人做，**「和历史基线的门禁」没人做**。
+说准确一点：**「把检索质量卡进 CI」不是空白**，已经有好项目在做。
+我们优化的是另一件事 —— **从「我有检索器」到「PR 会变红」的最短路径**：
+一个回调、不 import 任何向量库、不绑框架，附一个 30 秒能跑的假检索器；
+再加上 `drift`：它看的是**过程**（相似度分布有没有整体移位），而不只是**结果**。
 
 ## 30 秒跑通（零依赖，不用起数据库）
 

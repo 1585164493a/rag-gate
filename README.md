@@ -34,9 +34,14 @@ rag-gate compare --config rag-gate.yaml     # regression -> exit 1 -> red PR
 | Ragas / DeepEval | **Scores** one run, prints a number | No comparison against history, **no CI gate** |
 | promptfoo | A/B testing at the prompt level | Not about **retrieval** quality |
 | Your own script | One-off comparison | Not reusable, no stored baseline |
-| **rag-gate** | **Compares against a baseline, fails on regression** | — |
+| [Rag-regression-gate](https://github.com/sivananda1995/Rag-regression-gate), [rag-eval-gate](https://github.com/jinwovo/rag-eval-gate) | CI gates with statistics (bootstrap / confidence intervals) | Heavier setup; we trade statistics for **zero dependencies + a 30-second start** |
+| **rag-gate** | Baseline comparison, gating, **and a drift signal** | No significance testing yet (on the roadmap) |
 
-Scoring already exists. **Gating against a historical baseline does not.**
+To be precise: gating RAG retrieval in CI is not an empty space — there are good projects there.
+**What we optimize for instead** is the shortest path from "I have a retriever" to "my PR goes red
+when retrieval regresses": one callback, no vector-store imports, no framework, a fake retriever
+you can run in 30 seconds — plus `drift`, which watches the *process* (did the similarity
+distribution shift?) and not just the *results*.
 
 ## 30-second quickstart (zero dependencies, no vector DB)
 

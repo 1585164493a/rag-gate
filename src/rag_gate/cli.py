@@ -12,7 +12,7 @@ import argparse
 import os
 import sys
 from typing import Any, Dict, List, Optional, Sequence
-from rag_gate import __version__
+from rag_gate import __version__, color
 from rag_gate.adapters import AdapterError, retrieve_all
 from rag_gate.baseline import (
     BaselineError,
@@ -49,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="退码：0 通过 / 1 指标退化 / 2 配置或取数错误",
     )
     parser.add_argument("--version", action="version", version=f"{PROG} {__version__}")
+    parser.add_argument("--no-color", action="store_true", help="关掉终端颜色（也会自动遵守 NO_COLOR）")
     sub = parser.add_subparsers(dest="command", metavar="<run|baseline|compare|drift>")
 
     def common(p: argparse.ArgumentParser) -> None:
@@ -56,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--baseline", default=None, help="基线文件路径（默认读配置里的 gate.baseline）")
         p.add_argument("--format", default="table", help="输出格式：table | markdown | json（默认 table）")
         p.add_argument("-o", "--output-dir", default=None, help="报告输出目录（默认读配置）")
+        p.add_argument("--no-color", action="store_true", help="关掉终端颜色")
 
     p_run = sub.add_parser("run", help="跑一次并出报告，不做门禁判定")
     common(p_run)
@@ -327,13 +329,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if argv[0] in ("-h", "--help", "--version"):
         parser.parse_args(argv)
         return EXIT_OK
-    if argv[0] not in COMMANDS:
+    if not argv[0].startswith("-") and argv[0] not in COMMANDS:
         print(
             f"{PROG}: 不认识子命令 `{argv[0]}`。可用：run / baseline / compare / drift",
             file=sys.stderr,
         )
         return EXIT_ERROR
     args = parser.parse_args(argv)
+    if getattr(args, "no_color", False):
+        color.set_enabled(False)
     try:
         return COMMANDS[args.command](args)
     except (ConfigError, BaselineError, AdapterError, MetricError) as exc:

@@ -1,6 +1,11 @@
-# 报告与基线
-.rag-gate/
-!examples/.rag-gate/baseline.json
+# 报告产物（基线要提交，所以单独放行）
+**/.rag-gate/*
+!**/.rag-gate/baseline.json
+
+# 本地开发脚本与演示素材（不进发布内容）
+_dev/
+docs/_preview/
+docs/_frame-*.png
 
 # Python
 __pycache__/
@@ -24,6 +29,3 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
-
-# 本地开发脚本（不进发布内容）
-_dev/

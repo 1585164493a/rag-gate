@@ -1,0 +1,270 @@
+{
+  "format": 1,
+  "rag_gate_version": "0.1.0",
+  "created_at": "2026-10-08T21:46:42+08:00",
+  "dataset_digest": "b4269e91af8715e9",
+  "metrics": {
+    "hit_rate@5": 1.0,
+    "mrr": 0.958333,
+    "ndcg@5": 0.939554,
+    "recall@5": 0.96875
+  },
+  "drift": {
+    "after": {
+      "n": 16,
+      "mean": 0.97,
+      "std": 0.0,
+      "min": 0.97,
+      "p10": 0.97,
+      "p50": 0.97,
+      "p90": 0.97,
+      "max": 0.97
+    }
+  },
+  "notes": "demo 基线（healthy 模式）",
+  "per_query": [
+    {
+      "id": "q1",
+      "question": "向量数据库里为什么会出现重复数据？",
+      "expected_doc_ids": [
+        "kb-001"
+      ],
+      "retrieved": [
+        "kb-001",
+        "kb-002",
+        "kb-007",
+        "kb-003",
+        "kb-015"
+      ],
+      "error": null
+    },
+    {
+      "id": "q2",
+      "question": "写入重试之后索引里出现重复文档，怎么排查？",
+      "expected_doc_ids": [
+        "kb-002"
+      ],
+      "retrieved": [
+        "kb-001",
+        "kb-015",
+        "kb-002",
+        "kb-009",
+        "kb-013"
+      ],
+      "error": null
+    },
+    {
+      "id": "q3",
+      "question": "换了 Embedding 模型以后检索结果完全不对，是什么原因？",
+      "expected_doc_ids": [
+        "kb-003"
+      ],
+      "retrieved": [
+        "kb-003",
+        "kb-010",
+        "kb-011",
+        "kb-009",
+        "kb-007"
+      ],
+      "error": null
+    },
+    {
+      "id": "q4",
+      "question": "线上能用不同版本的 Embedding 同时跑吗？",
+      "expected_doc_ids": [
+        "kb-004"
+      ],
+      "retrieved": [
+        "kb-004",
+        "kb-009",
+        "kb-008",
+        "kb-001",
+        "kb-003"
+      ],
+      "error": null
+    },
+    {
+      "id": "q5",
+      "question": "长文档应该怎么切分才不会丢语义？",
+      "expected_doc_ids": [
+        "kb-005"
+      ],
+      "retrieved": [
+        "kb-005",
+        "kb-007",
+        "kb-002",
+        "kb-009",
+        "kb-013"
+      ],
+      "error": null
+    },
+    {
+      "id": "q6",
+      "question": "chunk 大小是不是越小越好？",
+      "expected_doc_ids": [
+        "kb-006",
+        "kb-005"
+      ],
+      "retrieved": [
+        "kb-006",
+        "kb-008",
+        "kb-009",
+        "kb-010",
+        "kb-011"
+      ],
+      "error": null
+    },
+    {
+      "id": "q7",
+      "question": "BM25 和向量检索怎么融合排序？",
+      "expected_doc_ids": [
+        "kb-007"
+      ],
+      "retrieved": [
+        "kb-007",
+        "kb-013",
+        "kb-011",
+        "kb-003",
+        "kb-015"
+      ],
+      "error": null
+    },
+    {
+      "id": "q8",
+      "question": "RAG 的回答不准，多久需要评测一次？",
+      "expected_doc_ids": [
+        "kb-008"
+      ],
+      "retrieved": [
+        "kb-008",
+        "kb-003",
+        "kb-011",
+        "kb-015",
+        "kb-012"
+      ],
+      "error": null
+    },
+    {
+      "id": "q9",
+      "question": "rerank 阶段要不要保留原始分数？",
+      "expected_doc_ids": [
+        "kb-009"
+      ],
+      "retrieved": [
+        "kb-009",
+        "kb-005",
+        "kb-007",
+        "kb-015",
+        "kb-013"
+      ],
+      "error": null
+    },
+    {
+      "id": "q10",
+      "question": "重排模型只能用相似度做排序特征吗？",
+      "expected_doc_ids": [
+        "kb-010"
+      ],
+      "retrieved": [
+        "kb-010",
+        "kb-007",
+        "kb-012",
+        "kb-003",
+        "kb-013"
+      ],
+      "error": null
+    },
+    {
+      "id": "q11",
+      "question": "检索效果怎么回归测试？",
+      "expected_doc_ids": [
+        "kb-011"
+      ],
+      "retrieved": [
+        "kb-011",
+        "kb-003",
+        "kb-015",
+        "kb-014",
+        "kb-013"
+      ],
+      "error": null
+    },
+    {
+      "id": "q12",
+      "question": "召回数量 k 设多少比较合适？",
+      "expected_doc_ids": [
+        "kb-012"
+      ],
+      "retrieved": [
+        "kb-012",
+        "kb-006",
+        "kb-011",
+        "kb-007",
+        "kb-008"
+      ],
+      "error": null
+    },
+    {
+      "id": "q13",
+      "question": "检索服务延迟升高了怎么定位？",
+      "expected_doc_ids": [
+        "kb-013"
+      ],
+      "retrieved": [
+        "kb-013",
+        "kb-011",
+        "kb-014",
+        "kb-002",
+        "kb-001"
+      ],
+      "error": null
+    },
+    {
+      "id": "q14",
+      "question": "缓存失效会不会把检索打挂？",
+      "expected_doc_ids": [
+        "kb-014",
+        "kb-013"
+      ],
+      "retrieved": [
+        "kb-014",
+        "kb-013",
+        "kb-011",
+        "kb-007",
+        "kb-003"
+      ],
+      "error": null
+    },
+    {
+      "id": "q15",
+      "question": "检索失败要不要重试？",
+      "expected_doc_ids": [
+        "kb-015"
+      ],
+      "retrieved": [
+        "kb-015",
+        "kb-011",
+        "kb-007",
+        "kb-014",
+        "kb-001"
+      ],
+      "error": null
+    },
+    {
+      "id": "q16",
+      "question": "失败重试之后为什么数据变多了？",
+      "expected_doc_ids": [
+        "kb-001",
+        "kb-015"
+      ],
+      "retrieved": [
+        "kb-001",
+        "kb-009",
+        "kb-015",
+        "kb-012",
+        "kb-011"
+      ],
+      "error": null
+    }
+  ]
+}
